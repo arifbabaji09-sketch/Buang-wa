@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#128C7E">
+<title>WA Bulk Sender</title>
+<style>
+:root {
+  --green: #25D366;
+  --green-dark: #128C7E;
+  --green-bg: #e8f8f0;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --text: #111b21;
+  --text-muted: #667781;
+  --border: #e9edef;
+  --radius: 12px;
+  --sent-bg: #e7f8ee;
+  --sent-text: #1a7a4a;
+  --danger: #dc2626;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* HEADER */
+.header {
+  background: var(--green-dark);
+  color: white;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.header-icon { font-size: 24px; line-height: 1; }
+.header-title { font-size: 17px; font-weight: 700; }
+.header-sub { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+.header-badge {
+  margin-left: auto;
+  background: rgba(255,255,255,0.2);
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 54px;
+  z-index: 99;
+}
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+.tab.active { color: var(--green-dark); border-bottom-color: var(--green-dark); }
+
+/* PAGES */
+.page { display: none; padding: 12px; }
+.page.active { display: block; }
+
+/* CARD */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.card-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+}
+
+/* FORM ELEMENTS */
+textarea, input[type=text] {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fafafa;
+  resize: vertical;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+textarea:focus, input[type=text]:focus { border-color: var(--green); background: white; }
+textarea { min-height: 80px; }
+.field-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.field-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; display: block; }
+.field-error { font-size: 11px; color: var(--danger); margin-top: 3px; display: none; }
+.field-error.show { display: block; }
+
+/* VAR CHIPS */
+.var-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.var-label { font-size: 11px; color: var(--text-muted); }
+.var-chip {
+  background: var(--green-bg);
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+  font-family: 'Courier New', monospace;
+  transition: background 0.15s;
+}
+.var-chip:active { background: #b7f5d3; }
+
+/* LOCK TOGGLE */
+.lock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+.lock-info { flex: 1; }
+.lock-title { font-size: 14px; font-weight: 600; }
+.lock-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.toggle {
+  width: 46px; height: 26px;
+  background: #ccc;
+  border-radius: 13px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  border: none;
+  outline: none;
+}
+.toggle.on { background: var(--green); }
+.toggle::after {
+  content: '';
+  width: 20px; height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle.on::after { left: 23px; }
+.divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+/* GENERATE BUTTON */
+.btn-generate {
+  width: 100%;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 4px;
+  font-family: inherit;
+}
+.btn-generate:active { transform: scale(0.98); background: #1ebe5a; }
+
+/* STATS */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.stat-num { font-size: 24px; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.stat-card.s-total .stat-num { color: var(--green-dark); }
+.stat-card.s-sent .stat-num { color: #1a7a4a; }
+.stat-card.s-remain .stat-num { color: #d97706; }
+
+/* PROGRESS */
+.prog-wrap { background: var(--border); border-radius: 4px; height: 5px; margin-bottom: 10px; overflow: hidden; }
+.prog-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.35s ease; }
+
+/* CONTACT LIST */
+.contact-list { display: flex; flex-direction: column; gap: 8px; }
+.contact-item {
+  background: white;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.contact-item.done { background: var(--sent-bg); border-color: #86efac; }
+
+.avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #e9edef;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px;
+  color: var(--green-dark);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.contact-item.done .avatar { background: #bbf7d0; color: #166534; }
+
+.contact-info { flex: 1; min-width: 0; }
+.c-name { font-size: 14px; font-weight: 600; }
+.c-num {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+  margin-top: 1px;
+  letter-spacing: 0.5px;
+}
+.c-preview {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-send {
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  text-decoration: none;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-send:active { background: #1ebe5a; }
+.badge-sent {
+  font-size: 11px;
+  background: #bbf7d0;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* BOTTOM ACTIONS */
+.bottom-actions { display: flex; gap: 8px; margin-top: 8px; }
+.btn-back {
+  flex: 1;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.btn-back:active { border-color: var(--green); color: var(--green-dark); }
+
+.btn-reset-sent {
+  flex: 1;
+  background: none;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sent-text);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* EMPTY */
+.empty { text-align: center; padding: 40px 16px; }
+.empty-icon { font-size: 44px; margin-bottom: 10px; }
+.empty p { font-size: 14px; color: var(--text-muted); }
+
+/* ABOUT TAB */
+.step-list { display: flex; flex-direction: column; gap: 12px; }
+.step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.step-num {
+  width: 28px; height: 28px;
+  background: var(--green);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.step-body {}
+.step-title { font-size: 14px; font-weight: 600; }
+.step-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.5; }
+
+.tip-box {
+  background: var(--green-bg);
+  border-left: 3px solid var(--green);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--green-dark);
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">💬</div>
+  <div>
+    <div class="header-title">WA Bulk Sender</div>
+    <div class="header-sub">Semi-otomatis · Lokal di device</div>
+  </div>
+  <div class="header-badge" id="hdr-badge">0 kontak</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('setup')">⚙️ Setup</div>
+  <div class="tab" onclick="switchTab('kirim')">📤 Kirim</div>
+  <div class="tab" onclick="switchTab('panduan')">📖 Panduan</div>
+</div>
+
+<!-- ===== TAB SETUP ===== -->
+<div class="page active" id="tab-setup">
+
+  <div class="card">
+    <div class="card-label">👥 Daftar Kontak</div>
+    <span class="field-label">Masukkan nomor HP (satu baris per orang)</span>
+    <textarea id="numbers" placeholder="Format:
+Nama|08xxxxxxxxxx
+Atau hanya nomor:
+08xxxxxxxxxx
+
+Contoh:
+Budi Santoso|08123456789
+Siti Rahayu|08987654321
+08111222333"></textarea>
+    <div class="field-hint">Format: <b>Nama|Nomor</b> atau hanya nomor. Semua format (08xxx / 628xxx / +62xxx) otomatis dikonversi.</div>
+    <div class="field-error" id="err-numbers">Masukkan minimal 1 nomor yang valid.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">✉️ Template Pesan</div>
+    <textarea id="template" placeholder="Tulis pesan di sini...
+Gunakan {nama} untuk nama otomatis.">Halo {nama}, kami ingin menginformasikan promo terbaru kami. Silakan hubungi kami untuk info lebih lanjut. Terima kasih 🙏</textarea>
+    <div class="field-error" id="err-template">Pesan tidak boleh kosong.</div>
+    <div class="var-row">
+      <span class="var-label">Sisipkan variabel:</span>
+      <button class="var-chip" onclick="insertVar('{nama}')">{nama}</button>
+      <button class="var-chip" onclick="insertVar('{nomor}')">{nomor}</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">🔒 Privasi</div>
+    <div class="lock-row">
+      <div class="lock-info">
+        <div class="lock-title">Sembunyikan nomor HP</div>
+        <div class="lock-desc">Nomor tampil sebagian: 0812••••789</div>
+      </div>
+      <button class="toggle on" id="toggle-mask" onclick="toggleMask()" aria-label="Toggle sembunyikan nomor"></button>
+    </div>
+    <div class="divider"></div>
+    <div class="lock-row">
+      <div class="lock-info">
+        <div class="lock-title">Sembunyikan preview pesan</div>
+        <div class="lock-desc">Preview pesan disensor di list</div>
+      </div>
+      <button class="toggle" id="toggle-preview" onclick="togglePreview()" aria-label="Toggle sembunyikan preview"></button>
+    </div>
+  </div>
+
+  <button class="btn-generate" onclick="generate()">⚡ Generate &amp; Mulai Kirim</button>
+</div>
+
+<!-- ===== TAB KIRIM ===== -->
+<div class="page" id="tab-kirim">
+  <div id="empty-kirim" class="empty">
+    <div class="empty-icon">📋</div>
+    <p>Belum ada kontak.<br>Isi dulu di tab Setup.</p>
+  </div>
+
+  <div id="kirim-content" style="display:none">
+    <div class="stats-row">
+      <div class="stat-card s-total"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card s-sent"><div class="stat-num" id="s-sent">0</div><div class="stat-lbl">Terkirim</div></div>
+      <div class="stat-card s-remain"><div class="stat-num" id="s-remain">0</div><div class="stat-lbl">Sisa</div></div>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+    <div class="contact-list" id="contact-list"></div>
+    <div class="bottom-actions">
+      <button class="btn-back" onclick="backToSetup()">↩ Ubah Setup</button>
+      <button class="btn-reset-sent" onclick="resetSent()">✓ Reset Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB PANDUAN ===== -->
+<div class="page" id="tab-panduan">
+  <div class="card">
+    <div class="card-label">📖 Cara Pakai</div>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Masukkan daftar kontak</div>
+          <div class="step-desc">Di tab Setup, tulis nomor satu per baris. Bisa format <code>Nama|08xxx</code> atau nomor saja.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Tulis template pesan</div>
+          <div class="step-desc">Gunakan <code>{nama}</code> supaya nama otomatis masuk ke setiap pesan.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Aktifkan privasi (opsional)</div>
+          <div class="step-desc">Toggle "Sembunyikan nomor HP" agar nomor tidak terlihat di layar saat pengiriman.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Tekan "Generate & Mulai Kirim"</div>
+          <div class="step-desc">Pindah ke tab Kirim, tekan tombol <b>📤 Kirim</b> per kontak. WhatsApp terbuka otomatis dengan pesan yang sudah terisi — tinggal pencet Send di WA.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">💡 Tips</div>
+    <div class="tip-box">
+      <b>Format nomor yang diterima:</b><br>
+      08xxxxxxxxxx · 628xxxxxxxxxx · +62xxxxxxxxxx<br><br>
+      <b>Simpan app ini offline:</b><br>
+      Buka file HTML ini di browser → Menu ⋮ → "Tambahkan ke Layar Utama" → jadi ikon app di HP tanpa install.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">⚠️ Penting</div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">
+      Aplikasi ini <b>tidak menyimpan data ke server manapun</b>. Semua data hanya ada di device kamu. Tidak perlu internet — data kontak dan pesan hanya tersimpan lokal saat sesi ini.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== STATE ===== */
+let contacts = [];
+let sentSet = new Set();
+let maskNum = true;
+let maskPreview = false;
+
+/* ===== TABS ===== */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['setup','kirim','panduan'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+/* ===== TOGGLES ===== */
+function toggleMask() {
+  maskNum = !maskNum;
+  document.getElementById('toggle-mask').classList.toggle('on', maskNum);
+  if (contacts.length) renderList();
+}
+function togglePreview() {
+  maskPreview = !maskPreview;
+  document.getElementById('toggle-preview').classList.toggle('on', maskPreview);
+  if (contacts.length) renderList();
+}
+
+/* ===== HELPERS ===== */
+function formatNumber(n) {
+  n = n.replace(/\D/g, '');
+  if (n.startsWith('0')) n = '62' + n.slice(1);
+  else if (!n.startsWith('62')) n = '62' + n;
+  return n;
+}
+
+function maskNumber(raw) {
+  if (!maskNum) return raw;
+  const d = raw.replace(/\D/g, '');
+  if (d.length <= 7) return raw;
+  const show = 4;
+  const tail = 3;
+  const masked = d.slice(0, show) + '••••' + d.slice(-tail);
+  return masked;
+}
+
+function getInitial(name) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function insertVar(v) {
+  const el = document.getElementById('template');
+  const s = el.selectionStart, e = el.selectionEnd;
+  el.value = el.value.slice(0, s) + v + el.value.slice(e);
+  el.focus();
+  el.setSelectionRange(s + v.length, s + v.length);
+}
+
+function buildMessage(c) {
+  return document.getElementById('template').value
+    .replace(/\{nama\}/gi, c.name)
+    .replace(/\{nomor\}/gi, c.rawNum);
+}
+
+/* ===== GENERATE ===== */
+function generate() {
+  const raw = document.getElementById('numbers').value.trim();
+  const tmpl = document.getElementById('template').value.trim();
+  let ok = true;
+
+  const errNum = document.getElementById('err-numbers');
+  const errTmpl = document.getElementById('err-template');
+
+  if (!raw) { errNum.textContent = 'Masukkan minimal 1 nomor.'; errNum.classList.add('show'); ok = false; }
+  else errNum.classList.remove('show');
+  if (!tmpl) { errTmpl.classList.add('show'); ok = false; }
+  else errTmpl.classList.remove('show');
+  if (!ok) return;
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const parsed = [];
+  let idx = 1;
+
+  for (const line of lines) {
+    let name, rawNum;
+    if (line.includes('|')) {
+      const parts = line.split('|');
+      name = parts[0].trim() || ('Kontak ' + idx);
+      rawNum = parts[1].trim();
+    } else {
+      name = 'Kontak ' + idx;
+      rawNum = line.trim();
+    }
+    const num = formatNumber(rawNum);
+    if (num.length >= 10 && num.length <= 15) {
+      parsed.push({ id: idx, name, rawNum, num });
+      idx++;
+    }
+  }
+
+  if (parsed.length === 0) {
+    errNum.textContent = 'Tidak ada nomor valid. Pastikan format benar.';
+    errNum.classList.add('show');
+    return;
+  }
+
+  contacts = parsed;
+  sentSet = new Set();
+  document.getElementById('hdr-badge').textContent = contacts.length + ' kontak';
+  switchTab('kirim');
+  renderKirim();
+}
+
+/* ===== RENDER KIRIM ===== */
+function renderKirim() {
+  const hasContacts = contacts.length > 0;
+  document.getElementById('empty-kirim').style.display = hasContacts ? 'none' : 'block';
+  document.getElementById('kirim-content').style.display = hasContacts ? 'block' : 'none';
+  if (hasContacts) { renderList(); updateStats(); }
+}
+
+function renderList() {
+  const list = document.getElementById('contact-list');
+  list.innerHTML = '';
+
+  for (const c of contacts) {
+    const done = sentSet.has(c.id);
+    const msg = buildMessage(c);
+    const url = 'https://wa.me/' + c.num + '?text=' + encodeURIComponent(msg);
+    const displayNum = maskNumber(c.rawNum);
+    const preview = maskPreview ? '•••••••••••••••' : (msg.length > 50 ? msg.slice(0, 50) + '…' : msg);
+
+    const item = document.createElement('div');
+    item.className = 'contact-item' + (done ? ' done' : '');
+    item.id = 'item-' + c.id;
+
+    item.innerHTML = `
+      <div class="avatar">${getInitial(c.name)}</div>
+      <div class="contact-info">
+        <div class="c-name">${c.name}</div>
+        <div class="c-num">${displayNum}</div>
+        <div class="c-preview">${preview}</div>
+      </div>
+      ${done
+        ? '<span class="badge-sent">✓ Kirim</span>'
+        : `<a href="${url}" target="_blank" class="btn-send" onclick="markSent(${c.id}, event)">📤 Kirim</a>`
+      }
+    `;
+    list.appendChild(item);
+  }
+}
+
+/* ===== MARK SENT ===== */
+function markSent(id, e) {
+  sentSet.add(id);
+  setTimeout(() => {
+    const item = document.getElementById('item-' + id);
+    if (!item) return;
+    item.classList.add('done');
+    const btn = item.querySelector('.btn-send');
+    if (btn) {
+      const badge = document.createElement('span');
+      badge.className = 'badge-sent';
+      badge.textContent = '✓ Kirim';
+      btn.replaceWith(badge);
+    }
+    updateStats();
+  }, 200);
+}
+
+/* ===== STATS ===== */
+function updateStats() {
+  const total = contacts.length;
+  const sent = sentSet.size;
+  const remain = total - sent;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-sent').textContent = sent;
+  document.getElementById('s-remain').textContent = remain;
+  const pct = total > 0 ? Math.round((sent / total) * 100) : 0;
+  document.getElementById('prog-bar').style.width = pct + '%';
+}
+
+/* ===== BACK / RESET ===== */
+function backToSetup() {
+  contacts = [];
+  sentSet = new Set();
+  document.getElementById('hdr-badge').textContent = '0 kontak';
+  document.getElementById('kirim-content').style.display = 'none';
+  document.getElementById('empty-kirim').style.display = 'block';
+  switchTab('setup');
+}
+
+function resetSent() {
+  sentSet = new Set();
+  renderList();
+  updateStats();
+}
+</script>
+</body>
+</html>
